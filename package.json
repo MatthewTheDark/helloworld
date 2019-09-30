@@ -11,5 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "localtunnel": "^2.0.0"
+  },
+  "devDependencies": {
+    "dateformat": "^3.0.3"
   }
 }
