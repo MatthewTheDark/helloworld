@@ -1,11 +1,45 @@
 const http = require("http");
 const dateFormat = require("dateformat");
+const fs = require("fs");
 let citac = 0;
 const DNYCZ = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
+
+
+
+function processStaticFiles(res, fileName) {
+    fileName = fileName.substr(1); //zkopir. od 2. znaku
+    console.log(fileName);
+    let contentType = "text/html";
+    if (fileName.endsWith(".png")){
+        contentType = "image/png";
+    } else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")){
+        contentType = "image/jpeg";
+    }
+
+    if (fs.existsSync(fileName)){
+        fs.readFile(fileName, function(err, data) {
+            res.writeHead(200, {'Content-Type': contentType});
+            res.write(data);
+            res.end();
+        });
+
+    } else {
+        res.writeHead(404);
+        res.end();
+
+    }
+}
+
 
 http.createServer((req, res) => {
     if (req.url === "/"){ //url - co po nas prohlizec chce
         citac++;
+        processStaticFiles(res, "/index.html");
+        return;
+    }
+    if (req.url.length - req.url.lastIndexOf(".") < 6){
+        processStaticFiles(res, req.url);
+        return;
     }
     if (req.url === "/jinastranka"){
         res.writeHead(200, {"Content-type": "text/html"});
