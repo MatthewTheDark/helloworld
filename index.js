@@ -1,6 +1,8 @@
 const http = require("http");
 const dateFormat = require("dateformat");
 const fs = require("fs");
+const  url = require('url');
+
 let citac = 0;
 const DNYCZ = ["Neděle", "Pondělí", "Úterý", "Středa", "Čtvrtek", "Pátek", "Sobota"];
 const SVATKY = [];
@@ -17,6 +19,7 @@ SVATKY[10] = [ "",'Igor', 'Olívie a Oliver', 'Bohumil', 'František', 'Eliška'
 SVATKY[11] = [ "",'Felix', 'Památka zesnulých', 'Hubert', 'Karel', 'Miriam', 'Liběna', 'Saskie', 'Bohumír', 'Bohdan', 'Evžen', 'Martin', 'Benedikt', 'Tibor', 'Sáva', 'Leopold', 'Otmar', 'Mahulena', 'Romana', 'Alžběta', 'Nikola', 'Albert', 'Cecílie', 'Klement', 'Emílie', 'Kateřina', 'Artur', 'Xenie', 'René', 'Zina', 'Ondřej'];
 SVATKY[12] = [ "",'Iva', 'Blanka', 'Svatoslav', 'Barbora', 'Jitka', 'Mikuláš', 'Ambrož', 'Květoslava', 'Vratislav', 'Julie', 'Dana', 'Simona', 'Lucie', 'Lýdie', 'Radana', 'Albína', 'Daniel', 'Miloslav', 'Ester', 'Dagmar', 'Natálie', 'Šimon', 'Vlasta', 'Adam a Eva , Štědrý den', '1. svátek vánoční', 'Štěpán , 2. svátek vánoční', 'Žaneta', 'Bohumila', 'Judita', 'David', 'Silvestr'];
 
+let msgs = new Array();
 
 
 function processStaticFiles(res, fileName) {
@@ -45,19 +48,20 @@ function processStaticFiles(res, fileName) {
 
 
 http.createServer((req, res) => {
-    if (req.url === "/"){ //url - co po nas prohlizec chce
+    let q = url.parse(req.url, true);
+    if (q.pathname === "/"){ //url - co po nas prohlizec chce
         citac++;
         processStaticFiles(res, "/index.html");
         return;
     }
-    if (req.url.length - req.url.lastIndexOf(".") < 6){
-        processStaticFiles(res, req.url);
+    if (q.pathname.length - q.pathname.lastIndexOf(".") < 6){
+        processStaticFiles(res, q.pathname);
         return;
     }
-    if (req.url === "/jinastranka"){
+    if (q.pathname === "/jinastranka"){
         res.writeHead(200, {"Content-type": "text/html"});
         res.end("<html lang='cs'><head><meta charset='UTF-8'><title></title></head><body>jina stranka</body></html>");
-    } else if (req.url === "/jsondemo"){
+    } else if (q.pathname === "/jsondemo"){
         res.writeHead(200, {"Content-type": "application/json"});
         let obj = {};
         obj.jmeno = "Link";
@@ -65,14 +69,14 @@ http.createServer((req, res) => {
         obj.rokNarozeni = 1980;
         JSON.stringify(obj);
         res.end(JSON.stringify(obj));
-    } else if (req.url == "/jsoncitac") {
+    } else if (q.pathname == "/jsoncitac") {
         res.writeHead(200, {
             "Content-type": "application/json",
         });
         let obj = {};
         obj.pocetVolani = citac;
         res.end(JSON.stringify(obj));
-    } else if (req.url == "/dayofweek") {
+    } else if (q.pathname == "/dayofweek") {
         res.writeHead(200, {
             "Content-type": "application/json",
             "Access-Control-Allow-Origin":"*"
@@ -88,21 +92,50 @@ http.createServer((req, res) => {
         obj.dateAndTimeCzFormat = dateFormat(d, "dd.mm.yyyy HH:MM:ss");
 
         res.end(JSON.stringify(obj));
-    } else if (req.url == "/svatky") {
+    } else if (q.pathname == "/svatky") {
         res.writeHead(200, {
             "Content-type": "application/json",
             "Access-Control-Allow-Origin":"*"
         });
-        let d =new Date();
-        let obj = {};
-        obj.systDatum = d;
-        obj.dateCzFormat = dateFormat(d, "dd.mm.yyyy");
-        obj.svatek = SVATKY[d.getMonth()+1][d.getDate()]
-        d.setDate(d.getDate() + 1);
-        obj.svatekZitra = SVATKY[d.getMonth()+1][d.getDate()]
 
+        let obj = {};
+        if (q.query["m"] && q.query["m"]){
+
+            let d = q.query["d"];
+            let m = q.query["m"];
+            obj.datum = d+"."+m+".";
+            obj.svatek = SVATKY[m][d];
+
+        } else {
+            let d =new Date();
+            obj.systDatum = d;
+            obj.dateCzFormat = dateFormat(d, "dd.mm.yyyy");
+            obj.svatek = SVATKY[d.getMonth()+1][d.getDate()]
+            d.setDate(d.getDate() + 1);
+            obj.svatekZitra = SVATKY[d.getMonth()+1][d.getDate()]
+
+        }
         res.end(JSON.stringify(obj));
-    }  else {
+    }  else if (q.pathname == "/chat/listmsgs") {
+        res.writeHead(200, {
+        "Content-type": "application/json",
+        "Access-Control-Allow-Origin":"*"});
+
+        let obj = {};
+        obj.messages = msgs;
+        res.end(JSON.stringify(obj));
+
+    }  else if (q.pathname == "/chat/addmsg") {
+        res.writeHead(200, {
+            "Content-type": "application/json",
+            "Access-Control-Allow-Origin":"*"});
+
+        let obj = {};
+        obj.text = q.query["msg"];
+        obj.time = new Date()
+        msgs.push(obj);
+        res.end(JSON.stringify(obj));
+    } else{
         res.writeHead(200, {"Content-type": "text/html"});
         res.end("<html lang='cs'><head><meta charset='UTF-8'><title></title></head><body>Počet: " +citac +"</body></html>");
     }
