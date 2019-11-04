@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Datum</title>
+    <script>
+        function readDate() {
+            fetch("http://localhost:8888/dayofweek").then(function(response) {
+                response.text().then(function(text) {
+                    let obj = JSON.parse(text);
+                        document.getElementById("day").innerHTML = obj.dayOfWeekCz.toLowerCase();
+                        document.getElementById("dateAndTime").innerHTML = obj.dateAndTimeCzFormat;
+                        document.getElementById("svatek").innerHTML = obj.svatek;
+                });
+            });
+
+
+        }
+        function timer() {
+            setInterval(readDate, 1000);
+        }
+    </script>
+</head>
+<body onload="timer()">
+
+Dnes je <b id="day"></b> <b id="dateAndTime"></b>. Svátek má <b id ="svatek"></b>.
+
+</body>
+</html>

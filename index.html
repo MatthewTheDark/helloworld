@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Single page app</title>
+    <script>
+        function readDate() {
+            setInterval(ListMsg, 1000); //aktualizuje zpravy
+            document.getElementById("calendar").valueAsDate = new Date();
+            NameByDate();
+
+            fetch("http://localhost:8888/svatky").then(function(response) {
+                response.text().then(function(text) {
+                    let obj = JSON.parse(text);
+                    document.getElementById("date").innerHTML = obj.dateCzFormat;
+                    document.getElementById("svatek").innerHTML = obj.svatek;
+                    document.getElementById("svatekZitra").innerHTML = obj.svatekZitra;
+                });
+            });
+
+
+        }
+        function NameByDate() {
+            let d = document.getElementById("calendar").valueAsDate;
+            fetch("http://localhost:8888/svatky?d="+d.getDate()+"&m="+(d.getMonth()+1)).then(function(response) {
+                response.text().then(function(text) {
+                    let obj = JSON.parse(text);
+                    document.getElementById("svatekChosen").innerHTML = obj.svatek;
+
+                });
+            });
+
+
+        }
+        function timer() {
+            setInterval(readDate, 1000);
+        }
+        function SendMsg(){
+            let chatmsg = document.getElementById("chatmsg").value;
+            let nick  = document.getElementById("nick").value;
+            fetch("http://localhost:8888/chat/addmsg?msg="+chatmsg + "&nick=" + nick).then(function(response) {
+                response.text().then(function(text) {
+                    document.getElementById("chatmsg").value = "";
+                    //kontrolovat status?
+                });
+            });
+        }
+        function ListMsg(){
+            let chatmsg = document.getElementById("chatmsg").value;
+            fetch("http://localhost:8888/chat/listmsgs").then(function(response) {
+                response.text().then(function(text) {
+                    let obj = JSON.parse(text);
+                    let s = "";
+                    for (let o of obj.messages){
+                        s = s + o.time + "<br>" + o.nick + "<br>" + o.text + "<br>";
+
+                    }
+                    document.getElementById("chatmsgs").innerHTML = s;
+
+
+
+                });
+            });
+        }
+    </script>
+</head>
+<body onload="readDate()" style="font-family: 'Lucida Calligraphy',serif; font-style: italic">
+
+
+
+
+<h1>CHACHA</h1>
+
+
+
+Dnes je <b id="date"></b>, svátek má <b id="svatek"></b>, zítra bude mít svátek <b id="svatekZitra"></b>.
+<br><br>
+
+<h1>chat</h1>
+<div id="chatmsgs"></div>
+<input type="text" id="nick"><input type="text" id="chatmsg"><input type="button" value="Send" onclick="SendMsg()">
+
+<br><br>
+
+<input type="date" id="calendar" onchange="NameByDate()"> má svátek <span id="svatekChosen">...</span>
+
+
+
+<br><br>
+
+<img src="red-dragon.jpg">
+
+</body>
+</html>
